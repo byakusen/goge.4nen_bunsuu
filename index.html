@@ -17,6 +17,10 @@
   --red:#D8342A;
   --yellow:#FFF3CC;
   --yellow-line:#E9C95B;
+  --pink-pale:#FBEAE8;
+  --pink-line:#F0C9C4;
+  --pink-dark:#A6473C;
+  --pink-on:#CC5A4E;
   --font:"Hiragino Maru Gothic ProN","ヒラギノ丸ゴ ProN W4","Yu Gothic Medium","游ゴシック Medium",YuGothic,"Meiryo",sans-serif;
 }
 *{box-sizing:border-box;}
@@ -39,11 +43,13 @@ body{
 rt{font-size:.5em;font-weight:normal;}
 
 /* ---- tabs ---- */
-.tabs{display:flex;gap:8px;padding:0 4px;flex-wrap:wrap;}
+.tabs{display:flex;gap:6px;padding:0 4px;flex-wrap:wrap;}
 .tab{
-  font-family:inherit;font-size:clamp(.9rem,2.4vh,1.2rem);font-weight:bold;color:var(--green-dark);
+  /* タブ8つ・計30文字が、いちばん広いとき（840px）でも1行に収まる大きさ。
+     30×16.8 ＋ 8×(2×10+4) ＋ 7×6 ＋ 8 ＝ 746px < 832px */
+  font-family:inherit;font-size:clamp(.8rem,2vh,1.05rem);font-weight:bold;color:var(--green-dark);
   background:var(--green-pale);border:2px solid #C4E3D0;border-bottom:none;
-  border-radius:14px 14px 0 0;padding:8px 15px 10px;margin-bottom:-2px;
+  border-radius:14px 14px 0 0;padding:8px clamp(7px,1vw,10px) 10px;margin-bottom:-2px;
   cursor:pointer;line-height:1.2;transition:background .15s;
 }
 .tab:hover{background:#D5EEDF;}
@@ -63,14 +69,14 @@ rt{font-size:.5em;font-weight:normal;}
 .topline{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
 .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-right:auto;}
 .subtab{
-  font-family:inherit;font-size:clamp(.72rem,1.9vh,.95rem);font-weight:bold;line-height:1.2;
-  color:var(--green-dark);background:var(--green-pale);
-  border:2px solid #C4E3D0;border-radius:999px;padding:5px 13px;cursor:pointer;
+  font-family:inherit;font-size:clamp(.84rem,2.2vh,1.1rem);font-weight:bold;line-height:1.2;
+  color:var(--pink-dark);background:var(--pink-pale);
+  border:2px solid var(--pink-line);border-radius:999px;padding:6px 15px;cursor:pointer;
   transition:background .15s;
 }
-.subtab:hover{background:#D5EEDF;}
-.subtab[aria-selected="true"]{background:var(--green);border-color:var(--green-dark);color:#fff;}
-.subtab:focus-visible{outline:3px solid var(--green);outline-offset:2px;}
+.subtab:hover{background:#F7DCD8;}
+.subtab[aria-selected="true"]{background:var(--pink-on);border-color:#A8483E;color:#fff;}
+.subtab:focus-visible{outline:3px solid var(--pink-on);outline-offset:2px;}
 .hintbtn{
   font-family:inherit;font-size:clamp(1rem,2.9vh,1.4rem);font-weight:bold;color:#8A6A00;
   background:var(--yellow);border:3px solid var(--yellow-line);border-bottom-width:6px;
@@ -89,14 +95,17 @@ rt{font-size:.5em;font-weight:normal;}
 /* ---- board : 左に式・右にテンキー ---- */
 .board{
   flex:1;min-height:0;
-  display:grid;grid-template-columns:1fr auto;gap:clamp(10px,2.5vw,26px);
-  align-items:center;align-content:center;overflow-x:hidden;overflow-y:auto;
+  display:flex;align-items:center;gap:clamp(10px,2.5vw,26px);
+  overflow:hidden;
   padding-top:clamp(14px,4vh,40px);
   --fs:clamp(1.7rem,min(8vh,5.6vw),3.3rem);
 }
 .left{
-  min-width:0;display:flex;flex-direction:column;
+  flex:1;min-width:0;align-self:stretch;
+  overflow-x:hidden;overflow-y:auto;
+  display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:clamp(14px,4vh,38px);
+  justify-content:safe center;
 }
 
 /* ---- equation ---- */
@@ -152,6 +161,14 @@ input.wide-box{width:2.1em;height:1.25em;}
   display:flex;align-items:center;justify-content:center;
   gap:.22em;flex-wrap:wrap;font-size:calc(var(--fs)*.8);
 }
+.eqrow.lg{font-size:var(--fs);}
+.eqrow.top{align-items:flex-start;}
+.eqrow.top .signbox{margin-top:.4em;}
+.side{display:inline-flex;flex-direction:column;align-items:center;}
+.downarrow{width:.44em;height:1.1em;margin-top:.12em;}
+.pie{width:1.85em;height:1.85em;margin-top:.16em;}
+.downarrow,.pie{opacity:0;transition:opacity .3s ease;}
+.eq.hinton .downarrow,.eq.hinton .pie{opacity:1;}
 .eqrow .big,.eqrow .ansfrac,.eqrow input.box,.eqrow .signbox{font-size:1em;}
 .eqrow .eqsign{font-size:.8em;}
 .signbox{
@@ -168,8 +185,139 @@ input.wide-box{width:2.1em;height:1.25em;}
 .pad.signs{grid-template-columns:1fr;}
 .key.sign{font-size:clamp(1.5rem,5vh,2.4rem);height:clamp(50px,8.8vh,86px);letter-spacing:0;}
 
+/* ---- 計算（たし算・ひき算） ---- */
+.notyet{font-size:clamp(1rem,3vh,1.45rem);font-weight:bold;color:var(--ink-soft);letter-spacing:.06em;}
+/* 整数部分＝ピンク、分数部分＝黄緑。ヒントを押したときだけ色がつく（.pt は色をつけない同じ形） */
+.ip,.fp,.pt{
+  display:inline-flex;align-items:center;
+  padding:.05em .16em;border-radius:.3em;background:transparent;
+  transition:background-color .3s ease,opacity .55s ease,transform .55s ease;
+}
+.eq.hinton:not(.nohl) .ip{background:#F9D2E0;}
+.eq.hinton:not(.nohl) .fp{background:#E2EDA6;}
+.fp.gone{opacity:0;transform:scale(.5) translateY(10px);}
+/* 帯分数のたし算：＝ を縦にそろえるための2列グリッド */
+.tteq{
+  display:grid;grid-template-columns:auto auto;
+  align-items:center;justify-content:center;
+  column-gap:.12em;row-gap:clamp(14px,3.2vh,34px);
+}
+.tteq .eqrow{font-size:calc(var(--fs)*.72);flex-wrap:nowrap;}
+.tteq.tk .eqrow{font-size:calc(var(--fs)*.62);}   /* ひき算は式が長いので少し小さく */
+.tteq .lhs{justify-content:flex-end;}
+.tteq .rhs{justify-content:flex-start;}
+/* 2段目は場所だけ先に取っておき、1段目が書けてから見えるようにする */
+.tteq .row2{transition:opacity .3s ease;}
+.tteq .row2.off{visibility:hidden;opacity:0;}
+.hintbox{
+  display:inline-block;text-align:left;
+  background:var(--yellow);border:2px solid var(--yellow-line);border-radius:14px;
+  padding:clamp(6px,1.1vh,11px) clamp(14px,2.6vw,26px);
+  font-size:clamp(.92rem,min(2.6vh,1.95vw),1.32rem);font-weight:bold;line-height:1.2;
+}
+.hintbox .hrow{display:flex;align-items:center;justify-content:flex-start;gap:.34em;white-space:nowrap;}
+.hintbox .frac{font-size:1.15em;margin:0 .06em;}
+.hintbox .rule{border-top:2.5px solid #8A6A00;margin:.3em 0;}
+.hintbox em{font-style:normal;color:var(--red);font-size:1.15em;}
+.hintbox .blank{
+  display:inline-block;width:1.5em;height:1.5em;
+  border:2px dashed #C9A227;border-radius:6px;background:#FFFDF3;
+}
+.hintbox .chip{padding:.12em .45em;border-radius:.35em;}
+.hintbox .chip.i{background:#F9D2E0;}
+.hintbox .chip.f{background:#E2EDA6;}
+.hintbox .ansred{color:var(--red);}
+/* くり下げのヒント：＝ を縦にそろえる2列組み */
+.hintbox.hb2{display:grid;grid-template-columns:auto auto;column-gap:.3em;row-gap:.2em;align-items:center;}
+.hintbox .hcell{display:flex;align-items:center;gap:.28em;white-space:nowrap;}
+
+/* ---- 文章題 ---- */
+.left.bun{
+  justify-content:flex-start;
+  gap:clamp(8px,2vh,20px);
+  padding-top:clamp(4px,1.6vh,16px);
+}
+.eq.col.bun{
+  gap:clamp(10px,2.4vh,26px);
+  width:100%;align-items:flex-start;   /* 問題文と式の左はしをそろえる */
+}
+.eq.col.bun .eqrow{
+  justify-content:flex-start;padding-left:.4em;
+  flex-wrap:nowrap;                     /* 式は かならず1行 */
+  font-size:calc(var(--fs)*.62);
+}
+.story{
+  max-width:min(100%,40em);text-align:left;font-weight:bold;
+  font-size:clamp(1.05rem,min(2.9vh,2.45vw),1.62rem);
+  /* 分数の入った行も入る行の高さにして、3行ぶんで固定する */
+  line-height:2.45;height:7.35em;
+}
+.story .frac{font-size:.95em;vertical-align:middle;margin:0 .1em;}
+.story .mixed{vertical-align:middle;}
+.story .kw{padding:.06em .12em;border-radius:.2em;background:transparent;transition:background-color .3s ease;}
+.eq.hinton .story .kw{background:#FFEE8C;}
+.shiki{font-size:.52em;font-weight:bold;color:var(--ink-soft);margin-right:.35em;letter-spacing:.06em;}
+.ansarea{display:inline-flex;align-items:center;gap:.14em;transition:opacity .3s ease;}
+.ansarea.off{visibility:hidden;opacity:0;}
+.eqrow .unit{font-size:.5em;margin-left:.2em;}
+
+/* ---- 考え方 ---- */
+.eq.col.kng{gap:0;width:100%;align-items:center;}
+.kpanel{
+  display:flex;flex-direction:column;align-items:flex-start;
+  gap:clamp(4px,1.2vh,13px);
+  background:#FBF7DE;border:3px solid #E3A857;border-radius:16px;
+  padding:clamp(8px,1.6vh,18px) clamp(12px,2.4vw,26px);
+  max-width:min(100%,34em);
+}
+.krow{
+  display:flex;align-items:center;flex-wrap:nowrap;gap:.2em;
+  font-size:clamp(.85rem,min(3vh,2vw),1.35rem);font-weight:bold;line-height:1.15;
+  white-space:nowrap;
+}
+.krow .frac{font-size:1.1em;margin:0 .1em;}
+input.box.kbox{font-size:1.15em;width:1.5em;height:1.5em;margin:0 .18em;}
+
+/* ---- 問題文の中の式（考え方の見出し） ---- */
+.prompt .pmark{font-weight:bold;margin:0 .28em;}
+.prompt .frac{font-size:1.1em;vertical-align:middle;margin:0 .08em;}
+.prompt .ptext{margin-left:.5em;}
+
+/* ---- 表し方：なかま分け・いくつ分 ---- */
+/* 1行に収める式。文字はふつうの大きさ、分数だけ大きくする */
+.mrow{
+  display:flex;align-items:center;justify-content:center;
+  flex-wrap:nowrap;white-space:nowrap;gap:.3em;
+  font-size:clamp(1rem,min(3.4vh,2.3vw),1.6rem);font-weight:bold;line-height:1.15;
+}
+.mrow .frac,.mrow .mixed,.mrow .ansfrac,.mrow input.box{font-size:1.5em;}
+/* 入れ子になった分数・マスは、二重に大きくならないよう 1em に もどす */
+.mrow .mixed .frac,.mrow .ansfrac input.box,.mrow .ansfrac .den-fixed{font-size:1em;}
+.mrow .frac{margin:0 .1em;}
+.mrow .cnt{font-size:1.25em;}
+/* えらんだ ことばを 入れる 赤いわく（＜＝＞のマスと同じ見た目） */
+.wordbox{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-weight:bold;color:var(--red);line-height:1;white-space:nowrap;
+  min-width:4.6em;height:1.7em;font-size:calc(var(--fs)*.4);margin-left:.5em;
+  background:#FFF8F7;border:3px dashed #E7A9A4;border-radius:12px;
+  box-shadow:0 0 0 5px rgba(216,52,42,.13);
+}
+/* テープ図はヒントのときだけ見せる（場所は最初から取っておく） */
+.tapebox.hintonly{opacity:0;transition:opacity .3s ease;}
+.tapebox.hintonly.hint{opacity:1;}
+.key.word{font-size:clamp(1rem,3.2vh,1.55rem);letter-spacing:.04em;}
+/* まちがえた問題を あとで もう一度 出すときの目じるし */
+.again{
+  font-size:.72em;color:var(--pink-dark);background:var(--pink-pale);
+  border:2px solid var(--pink-line);border-radius:999px;
+  padding:.1em .7em;margin-right:.6em;vertical-align:.1em;white-space:nowrap;
+}
+
 /* ---- message / formula bar ---- */
 .bar-area{position:relative;width:100%;height:clamp(58px,11vh,92px);}
+.bar-area.tall{height:clamp(146px,26vh,200px);}
+.bar-area.mid{height:clamp(112px,20vh,160px);}
 .bar-inner{
   position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
   display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
@@ -177,6 +325,12 @@ input.wide-box{width:2.1em;height:1.25em;}
 .judge{font-size:clamp(.95rem,2.8vh,1.35rem);font-weight:bold;}
 .judge.ok{color:var(--red);}
 .judge.ng{color:var(--ink);}
+/* まちがい方に合わせた ひとこと。ヒントの横に細く置いて 高さを ふやさない */
+.judge.ng.tip{
+  font-size:clamp(.86rem,2.3vh,1.1rem);line-height:1.32;
+  max-width:13.5em;text-align:left;white-space:normal;
+}
+.judge.ng.tip b{color:var(--red);font-weight:bold;}
 .formula{
   background:var(--yellow);border:2px solid var(--yellow-line);border-radius:14px;
   padding:8px 22px;font-size:clamp(1.15rem,min(4.6vh,3.4vw),2.1rem);font-weight:bold;letter-spacing:.06em;
@@ -188,8 +342,9 @@ input.wide-box{width:2.1em;height:1.25em;}
 
 /* ---- テンキー（右がわ） ---- */
 .rightcol{
+  flex:none;align-self:center;
   width:clamp(158px,25vw,262px);
-  display:flex;flex-direction:column;gap:clamp(8px,1.8vh,14px);
+  display:flex;flex-direction:column;justify-content:center;gap:clamp(8px,1.8vh,14px);
 }
 .nextbtn{
   font-family:inherit;font-size:clamp(.85rem,2.2vh,1.05rem);font-weight:bold;
@@ -206,6 +361,9 @@ input.wide-box{width:2.1em;height:1.25em;}
   gap:clamp(6px,1.4vh,12px);
   width:100%;
   padding:clamp(8px,1.8vh,16px);
+  /* 数字のテンキー（4段）とまったく同じ高さ。＜＝＞ や ＋－ でも位置が動かない */
+  min-height:calc(2*clamp(8px,1.8vh,16px) + 4*clamp(38px,6.6vh,64px) + 3*clamp(6px,1.4vh,12px));
+  align-content:center;
   background:#F1F6FA;border:2px solid #CFDDE8;border-radius:18px;
   box-shadow:0 3px 0 rgba(31,58,95,.07);
 }
@@ -241,22 +399,10 @@ input.wide-box{width:2.1em;height:1.25em;}
 .shake{animation:shake .3s;}
 @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
 
-/* ---- result ---- */
-.result{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;}
-.result h2{font-size:clamp(1.1rem,3.4vh,1.5rem);margin:0;}
-.result .subtabs{justify-content:center;margin-right:0;margin-bottom:4px;}
-.result .count{font-size:clamp(2rem,8vh,3.2rem);color:var(--red);font-weight:bold;}
-.result .marks{display:flex;justify-content:center;flex-wrap:wrap;gap:2px;max-width:520px;}
-.result .marks img{width:clamp(28px,6vh,46px);height:auto;}
-.again{
-  font-family:inherit;font-size:1.05rem;font-weight:bold;background:var(--green);color:#fff;
-  border:2px solid var(--green-dark);border-bottom-width:5px;border-radius:999px;padding:11px 26px;cursor:pointer;
-}
-.again:active{transform:translateY(2px);}
-
 @media (max-width:600px){
-  .board{grid-template-columns:1fr;gap:6px;align-content:center;}
-  .rightcol{width:min(230px,72vw);margin:0 auto;}
+  .board{flex-direction:column;gap:6px;overflow-y:auto;}
+  .left{align-self:auto;overflow:visible;}
+  .rightcol{width:min(230px,72vw);margin:0 auto;align-self:auto;}
   .big{font-size:clamp(1.6rem,7.5vh,2.6rem);}
 }
 @media (prefers-reduced-motion:reduce){
@@ -274,20 +420,20 @@ input.wide-box{width:2.1em;height:1.25em;}
   </header>
 
   <nav class="tabs" role="tablist" aria-label="れんしゅうのしゅるい">
-    <button class="tab" role="tab" aria-selected="true" aria-controls="sheet" data-mode="arawashi">分数の表し方</button>
-    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="kaTai">仮分数 → 帯分数</button>
-    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="taiKa">帯分数 → 仮分数</button>
+    <button class="tab" role="tab" aria-selected="true" aria-controls="sheet" data-mode="arawashi">表し方</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="kaTai">仮→帯分数</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="taiKa">帯→仮分数</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="fugou">不等号</button>
     <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="ookisa">分数の大きさ</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="keisan">計算</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="bunshou">文章題</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="sheet" data-mode="kangae">考え方</button>
   </nav>
 
   <main class="sheet" id="sheet" role="tabpanel">
     <div id="practice" class="practice">
       <div class="topline">
-        <div class="subtabs" id="subtabs" role="tablist" aria-label="もんだいのしゅるい" hidden>
-          <button class="subtab" role="tab" aria-selected="true" data-sub="same">同じ大きさ</button>
-          <button class="subtab" role="tab" aria-selected="false" data-sub="cmp">不等号</button>
-          <button class="subtab" role="tab" aria-selected="false" data-sub="rnd">ランダム</button>
-        </div>
+        <div class="subtabs" id="subtabs" role="tablist" aria-label="もんだいのしゅるい" hidden></div>
         <button class="hintbtn" id="hintBtn" type="button">ヒント</button>
       </div>
       <div class="prompt" id="prompt"></div>
@@ -302,7 +448,6 @@ input.wide-box{width:2.1em;height:1.25em;}
         </div>
       </div>
     </div>
-    <div class="result" id="result" hidden></div>
   </main>
 </div>
 
@@ -314,20 +459,32 @@ input.wide-box{width:2.1em;height:1.25em;}
 "use strict";
 const $=function(id){return document.getElementById(id);};
 const rnd=function(a,b){return a+Math.floor(Math.random()*(b-a+1));};
-const TOTAL=10;
-const STAMP=$('stamp').getAttribute('src');
 
 function setBar(html){$('barInner').innerHTML=html||'';}
+// ヒント（矢じるし・円・数直線の色ぬり）の出し入れ
+function setHint(on){
+  const e=$('eq'); if(e)e.classList.toggle('hinton',!!on);
+  const t=$('tapebox'); if(t)t.classList.toggle('hint',!!on);
+}
+function applyHint(on){ setHint(on); setBar(on?formulaHTML(S().q,false):''); }
 function frac(n,d,cls){return '<span class="frac '+(cls||'')+'"><span class="num">'+n+'</span><span class="den">'+d+'</span></span>';}
 function mixed(w,n,d,cls){return '<span class="mixed '+(cls||'')+'"><span>'+w+'</span>'+frac(n,d)+'</span>';}
 
 /* ===== もんだい ===== */
 const MODES={
   arawashi:{
-    prompt:'色をぬった部分の長さを、仮分数と帯分数の両方で表しましょう。',
+    prompt:function(q){
+      if(!q)return '';
+      if(q.kind==='nak')return 'つぎの分数は、真分数・仮分数・帯分数の どれですか。';
+      if(q.kind==='iku')return '□にあてはまる数を書きましょう。';
+      return '色をぬった部分の長さを、仮分数と帯分数の両方で表しましょう。';
+    },
     make:function(){
+      const s=SUB();
+      if(s==='ikutsu')return makeIkutsu();
+      if(s==='nakama')return makeNakama();
       const d=rnd(2,5), w=rnd(1,3), r=rnd(1,d-1);
-      return {d:d,w:w,r:r,n:w*d+r};
+      return {kind:'ara',d:d,w:w,r:r,n:w*d+r};
     }
   },
   kaTai:{
@@ -345,6 +502,10 @@ const MODES={
       return {d:d,w:w,r:r,n:w*d+r};
     }
   },
+  fugou:{
+    prompt:'□にあてはまる、等号や不等号を書きましょう。',
+    make:function(){ return Math.random()<0.5?makeMixImp():makeSameNum(); }
+  },
   ookisa:{
     prompt:function(q){
       return q.kind==='eq'
@@ -352,12 +513,236 @@ const MODES={
         : '□にあてはまる、等号や不等号を書きましょう。';
     },
     make:function(){
-      if(sub==='same')return makeEqual();
-      if(sub==='cmp')return makeCompare();
+      const s=SUB();
+      if(s==='same')return makeEqual();
+      if(s==='cmp')return makeCompare();
       return Math.random()<0.5?makeEqual():makeCompare();   // ランダム
+    }
+  },
+  keisan:{
+    prompt:function(q){
+      if(q&&q.kind==='th')return 'たし算やひき算をしましょう。（答えを整数になおせるときは、整数になおしましょう。）';
+      if(q&&q.kind==='tt')return 'たし算をしましょう。（答えを整数になおせるときは、整数になおしましょう。）';
+      if(q&&q.kind==='tk')return 'ひき算をしましょう。';
+      return 'この もんだいは じゅんび中です。';
+    },
+    make:function(){
+      const s=SUB();
+      if(s==='th')return makeTasuHiku();
+      if(s==='tt')return makeTaiTasu();
+      if(s==='tk')return makeTaiHiku();
+      return {kind:'yet'};
+    }
+  },
+  bunshou:{
+    prompt:'しきの □ に ＋ か － を書いて、答えをもとめましょう。',
+    make:function(){ return makeBunshou(); }
+  },
+  kangae:{
+    prompt:function(q){
+      if(!q)return '';
+      return (q.op==='add'?frac(q.a,q.d)+'<span class="pmark">＋</span>'+frac(q.b,q.d)
+                          :frac(q.a,q.d)+'<span class="pmark">－</span>'+frac(q.b,q.d))+
+             '<span class="ptext">の計算のしかたを説明します。□に数を書きましょう。</span>';
+    },
+    make:function(){
+      const d=rnd(3,9);
+      if(rnd(0,1)){                      // たし算（くり上がって仮分数になる形も出す）
+        let a,b; do{ a=rnd(1,d-1); b=rnd(1,d-1); }while(a+b===d);
+        return {kind:'kng',op:'add',d:d,a:a,b:b};
+      }
+      const a=rnd(2,d-1), b=rnd(1,a-1);  // ひき算
+      return {kind:'kng',op:'sub',d:d,a:a,b:b};
     }
   }
 };
+
+/* ---- 文章題 ---- */
+const NAMES=['みお','ゆうと','あおい','はると','さくら','そうた','ひなた','けんた'];
+// 項ひとつ。form が 'imp' のときは r に仮分数の分子を入れる
+function T(w,r,d,form){return {w:w,r:r,d:d,n:w*d+r,form:form};}
+function sf(t){return (t.form!=='imp'&&t.w)?mixed(t.w,t.r,t.d):frac(t.n,t.d);}
+function bunTerm(t){return (t.form==='imp')?frac(t.n,t.d,'big'):hlTerm(t.w,t.r,t.d);}
+function name(){return NAMES[rnd(0,NAMES.length-1)];}
+
+const BUNS=[
+  // ① 道のり（帯分数 ＋ 真分数）
+  function(){
+    const d=rnd(3,9), w1=rnd(1,2), r1=rnd(1,d-1);
+    let r2; do{ r2=rnd(1,d-1); }while(r1+r2===d);
+    const t1=T(w1,r1,d,'mix'), t2=T(0,r2,d,'mix'), nm=name();
+    return {t1:t1,t2:t2,op:'add',unit:'km',
+      text:nm+'さんの家から学校までは '+sf(t1)+' km、学校から駅までは '+sf(t2)+' km あります。<br>'+
+           '家から<span class="kw">学校の前を通って駅まで</span>は 何km ありますか。'};
+  },
+  // ② リボン（仮分数 － 仮分数）
+  function(){
+    const d=rnd(3,9);
+    let a,n1,n2,g=0;
+    do{ a=rnd(1,d-1); n1=rnd(d+1,2*d-1); n2=n1-a; g++; }while(g<80&&(n2<1||n2%d===0));
+    const t1=T(0,n1,d,'imp'), t2=T(0,n2,d,'imp');
+    return {t1:t1,t2:t2,op:'sub',unit:'m',
+      text:sf(t1)+' m のリボンのうち、'+sf(t2)+' m 使いました。<br>'+
+           'リボンは 何m <span class="kw">のこって</span>いますか。'};
+  },
+  // ③ かさのちがい（帯分数 － 真分数・くり下がり）
+  function(){
+    const d=rnd(3,9), w1=rnd(1,3), r1=rnd(1,d-2), r2=rnd(r1+1,d-1);
+    const t1=T(w1,r1,d,'mix'), t2=T(0,r2,d,'mix');
+    return {t1:t1,t2:t2,op:'sub',unit:'L',
+      text:'ジュースが びんに '+sf(t1)+' L、紙パックに '+sf(t2)+' L あります。<br>'+
+           'かさの <span class="kw">ちがい</span>は 何L ですか。'};
+  },
+  // ④ テープ（真分数 ＋ 真分数・くり上がり）
+  function(){
+    const d=rnd(3,9);
+    let r1,r2; do{ r1=rnd(1,d-1); r2=rnd(1,d-1); }while(r1+r2<=d);
+    const t1=T(0,r1,d,'mix'), t2=T(0,r2,d,'mix');
+    return {t1:t1,t2:t2,op:'add',unit:'m',
+      text:'赤いテープが '+sf(t1)+' m、白いテープが '+sf(t2)+' m あります。<br>'+
+           '<span class="kw">あわせて</span> 何m ありますか。'};
+  },
+  // ⑤ のこり（帯分数 － 真分数・くり下がりなし）
+  function(){
+    const d=rnd(4,9), w1=rnd(1,3), r2=rnd(1,d-2), r1=rnd(r2+1,d-1);
+    const t1=T(w1,r1,d,'mix'), t2=T(0,r2,d,'mix');
+    return {t1:t1,t2:t2,op:'sub',unit:'kg',
+      text:'さとうが '+sf(t1)+' kg あります。'+sf(t2)+' kg 使いました。<br>'+
+           '何kg <span class="kw">のこって</span>いますか。'};
+  },
+  // ⑥ あわせて（帯分数 ＋ 帯分数）
+  function(){
+    const d=rnd(3,9), w1=rnd(1,2), w2=rnd(1,2), r1=rnd(1,d-1);
+    let r2; do{ r2=rnd(1,d-1); }while(r1+r2===d);
+    const t1=T(w1,r1,d,'mix'), t2=T(w2,r2,d,'mix');
+    return {t1:t1,t2:t2,op:'add',unit:'L',
+      text:'牛にゅうが 大きいびんに '+sf(t1)+' L、小さいびんに '+sf(t2)+' L あります。<br>'+
+           '<span class="kw">あわせて</span> 何L ありますか。'};
+  }
+];
+function makeBunshou(){
+  const b=BUNS[rnd(0,BUNS.length-1)](), d=b.t1.d;
+  const tot=(b.op==='add')?b.t1.n+b.t2.n:b.t1.n-b.t2.n;
+  const s=b.t1.r+b.t2.r;                       // 分数部分どうしの和（たし算のとき）
+  return {kind:'bun',stage:0,d:d,t1:b.t1,t2:b.t2,op:b.op,unit:b.unit,text:b.text,
+          W:Math.floor(tot/d), r:tot%d,
+          w0:b.t1.w+b.t2.w, s:s,               // そのまま計算した形（1 12/9 の 1 と 12）
+          carry:(b.op==='add'&&s>=d),          // くり上がる
+          borrow:(b.op==='sub'&&b.t1.form!=='imp'&&b.t1.r<b.t2.r)};   // くり下がる
+}
+
+/* ---- 計算：同分母のたし算・ひき算（3/7 ＋ 6/7） ---- */
+function makeTasuHiku(){
+  const d=rnd(3,9);
+  const add=(Math.random()<0.5);
+  let a,n1,n2,g=0;                              // a＝答えの分子
+  do{
+    const t=Math.random();
+    if(t<0.18)      a=d*rnd(1,2);               // 約2割は整数になおせる
+    else if(t<0.40) a=rnd(add?2:1,d-1);         // 約2割は答えが真分数
+    else { do{ a=rnd(d+1,2*d); }while(a%d===0); }
+    if(add){ n1=rnd(1,a-1); n2=a-n1; }
+    else   { n2=rnd(1,Math.min(2*d-1,3*d-a)); n1=a+n2; }
+    g++;
+  }while(g<60&&(n1%d===0||n2%d===0));           // 4/4 や 10/5 のような式は出さない
+  return {kind:'th',d:d,add:add,n1:n1,n2:n2,a:a,w:(a%d===0)?a/d:0};
+}
+
+/* ---- 計算：帯分数のたし算（3 2/5 ＋ 1 1/5） ---- */
+function makeTaiTasu(){
+  const d=rnd(3,9);
+  const f=Math.random();
+  let w1,r1,w2,r2;
+  if(f<0.15){                                   // 整数 ＋ 帯分数（やってみよう）
+    const r=rnd(1,d-1);
+    if(Math.random()<0.5){ w1=rnd(1,4); r1=0;  w2=rnd(1,4); r2=r; }
+    else                 { w1=rnd(1,4); r1=r;  w2=rnd(1,4); r2=0; }
+  }else{
+    const t=Math.random();
+    let s;                                      // 分数部分の和
+    if(t<0.18)      s=d;                        // 答えが整数になる
+    else if(t<0.48) s=rnd(d+1,2*d-2);           // くり上がりあり
+    else            s=rnd(2,d-1);               // くり上がりなし
+    r1=rnd(Math.max(1,s-(d-1)),Math.min(d-1,s-1)); r2=s-r1;
+    if(f<0.60){ w1=rnd(1,4); w2=rnd(1,4); }               // 帯分数 ＋ 帯分数
+    else if(Math.random()<0.5){ w1=0; w2=rnd(1,4); }      // 真分数 ＋ 帯分数
+    else { w1=rnd(1,4); w2=0; }                           // 帯分数 ＋ 真分数
+  }
+  const s2=r1+r2, carry=(s2>=d);
+  return {kind:'tt',d:d,w1:w1,r1:r1,w2:w2,r2:r2,carry:carry,stage:0,
+          w0:w1+w2, s:s2,                            // 1段目（そのまま計算した答え）
+          W:w1+w2+(carry?1:0), r:carry?s2-d:s2};     // 2段目（くり上げたあとの答え）
+}
+// 帯分数・真分数・整数のどれでも、整数部分と分数部分に色をつけられる形で書く
+// plain を true にすると、色はつかないが幅は同じ（くり下げ前の式に使う）
+function hlTerm(w,r,d,plain){
+  const ci=plain?'pt':'ip', cf=plain?'pt':'fp';
+  let s='<span class="mixed big">';
+  if(w)s+='<span class="'+ci+'">'+w+'</span>';
+  if(r)s+='<span class="'+cf+'">'+frac(r,d)+'</span>';
+  return s+'</span>';
+}
+// 答えの1組（整数・分子・分母）。p は 'a'（1段目）か 'b'（2段目）
+function ansSet(p,len,withId){
+  return '<span class="mixed">'+
+    '<span class="ip"><input class="box whole-box" id="'+p+'1" type="text" inputmode="numeric" maxlength="1" aria-label="答えの整数"></span>'+
+    '<span class="fp"'+(withId?' id="ansfrac"':'')+'><span class="ansfrac">'+
+      '<input class="box '+(len>1?'wide-box':'num-box')+'" id="'+p+'2" type="text" inputmode="numeric" maxlength="'+len+'" aria-label="答えの分子">'+
+      '<span class="bar"></span>'+
+      '<input class="box num-box" id="'+p+'3" type="text" inputmode="numeric" maxlength="1" aria-label="答えの分母">'+
+    '</span></span>'+
+  '</span>';
+}
+
+/* ---- 計算：帯分数のひき算（3 2/5 － 3/5） ---- */
+function makeTaiHiku(){
+  const d=rnd(3,9);
+  const W=rnd(1,4);                 // 答えの整数部分（かならず1以上）
+  let r=rnd(1,d-1);                 // 答えの分子（かならず1以上＝整数になる答えは出さない）
+  let bo=(Math.random()<0.45);
+  if(d-1-r<1)bo=(Math.random()<0.6);   // くり下がらない形が作りにくいときはくり下がりに寄せる
+  let w2,r2;
+  if(bo){
+    if(Math.random()<0.15){
+      r2=d-r;                       // ひかれる数が整数になる形（3 － 5/8）
+    }else{
+      if(r<2)r=rnd(2,d-1);          // ひかれる数に分数部分が残る形
+      r2=rnd(d-r+1,d-1);
+    }
+    w2=(Math.random()<0.55)?0:rnd(1,3);          // 真分数をひく／帯分数をひく
+  }else{
+    const hi=d-1-r;
+    if(hi<1||Math.random()<0.3){ r2=0; w2=rnd(1,3); }   // 整数をひく（5 1/6 － 3）
+    else { r2=rnd(1,hi); w2=(Math.random()<0.5)?0:rnd(1,3); }
+  }
+  const s=r+r2, borrow=(s>=d);
+  const r1=s%d, w1=W+w2+(borrow?1:0);
+  return {kind:'tk',d:d,w1:w1,r1:r1,w2:w2,r2:r2,borrow:borrow,stage:0,
+          bw:w1-1, br:r1+d,                      // くり下げた形（2 7/5 の 2 と 7）
+          W:W, r:r};
+}
+
+/* ---- 不等号：もんだいづくり ---- */
+// 帯分数と仮分数をくらべる（3 2/9 □ 28/9）
+function makeMixImp(){
+  let d,w,r,base,n,g=0;
+  do{
+    d=rnd(2,9); w=rnd(1,4); r=rnd(1,d-1);
+    base=w*d+r;
+    n=(Math.random()<0.2)?base:base+(Math.random()<0.5?-1:1)*rnd(1,3);  // 2割はぴったり同じ
+    g++;
+  }while(g<50&&n<d);
+  const flip=(Math.random()<0.5);            // true なら仮分数が左
+  const lv=flip?n:base, rv=flip?base:n;
+  return {kind:'mi',d:d,w:w,r:r,base:base,n:n,flip:flip,ans:lv>rv?'gt':(lv<rv?'lt':'eq')};
+}
+// 分子が同じで分母がちがう（3/8 □ 3/5）
+function makeSameNum(){
+  let d1=rnd(2,10),d2=rnd(2,10);
+  while(d2===d1)d2=rnd(2,10);
+  const n=rnd(1,Math.min(d1,d2)-1);
+  return {kind:'sn',n:n,d1:d1,d2:d2,ans:d1<d2?'gt':'lt'};
+}
 
 /* ---- 分数の大きさ：もんだいづくり ---- */
 function gcd(a,b){return b?gcd(b,a%b):a;}
@@ -403,6 +788,36 @@ function makeCompare(){
   return {kind:'cmp',d1:a.d,n1:a.n,d2:b.d,n2:b.n,ans:L>R?'gt':(L<R?'lt':'eq')};
 }
 
+/* ---- 表し方：なかま分け（真分数・仮分数・帯分数） ---- */
+const NAK={shin:'真分数',kari:'仮分数',tai:'帯分数'};
+function makeNakama(){
+  const d=rnd(2,9), t=rnd(0,2);
+  if(t===0){                                  // 真分数
+    const n=rnd(1,d-1);
+    return {kind:'nak',type:'shin',ans:'shin',w:0,r:n,d:d,n:n};
+  }
+  if(t===1){                                  // 仮分数（分子＝分母 も 2割ほど 出す）
+    const n=(Math.random()<0.2)?d:rnd(d+1,3*d);
+    return {kind:'nak',type:'kari',ans:'kari',w:0,r:n,d:d,n:n};
+  }
+  const w=rnd(1,4), r=rnd(1,d-1);             // 帯分数
+  return {kind:'nak',type:'tai',ans:'tai',w:w,r:r,d:d,n:w*d+r};
+}
+
+/* ---- 表し方：いくつ分（1/5 の 7こ分 は □/□） ---- */
+// form 'a' … 1/d の n こ分 は □/□      （分母 → 分子）
+// form 'b' … n/d は 1/□ の □こ分       （分母 → こ数）
+// form 'c' … w r/d は 1/d の □こ分      （こ数だけ）
+function makeIkutsu(){
+  const d=rnd(2,9), t=rnd(0,2);
+  if(t===2){
+    const w=rnd(1,3), r=rnd(1,d-1);
+    return {kind:'iku',form:'c',d:d,w:w,r:r,n:w*d+r};
+  }
+  let n; do{ n=rnd(2,2*d); }while(n===d);      // 5/5 のような形は 出さない
+  return {kind:'iku',form:(t===0?'a':'b'),d:d,n:n};
+}
+
 /* ===== テープ図 ===== */
 function tapeSVG(n,d){
   const W=Math.ceil(n/d), L=48, R=880, TOP=10, H=56;
@@ -423,6 +838,22 @@ function tapeSVG(n,d){
   }
   g+='<text x="'+(R+34)+'" y="'+(NY+36)+'" font-size="25" fill="#1F3A5F">(m)</text>';
   return g+'</svg>';
+}
+
+/* ===== 円の絵（不等号のヒント） ===== */
+const ARROW='<svg class="downarrow" viewBox="0 0 24 60" aria-hidden="true">'+
+  '<line x1="12" y1="3" x2="12" y2="39" stroke="#C9A227" stroke-width="6" stroke-linecap="round"/>'+
+  '<path d="M2,37 L22,37 L12,57 Z" fill="#C9A227"/></svg>';
+function pieSVG(n,d){
+  const R=44,C=50;
+  let g='<svg class="pie" viewBox="0 0 100 100" aria-hidden="true">';
+  for(let k=0;k<d;k++){
+    const a0=(-90+360*k/d)*Math.PI/180, a1=(-90+360*(k+1)/d)*Math.PI/180;
+    g+='<path d="M'+C+','+C+' L'+(C+R*Math.cos(a0)).toFixed(2)+','+(C+R*Math.sin(a0)).toFixed(2)+
+       ' A'+R+','+R+' 0 0 1 '+(C+R*Math.cos(a1)).toFixed(2)+','+(C+R*Math.sin(a1)).toFixed(2)+
+       ' Z" fill="'+(k<n?'#F3B0A8':'#FFFFFF')+'" stroke="#1F3A5F" stroke-width="2"/>';
+  }
+  return g+'<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#1F3A5F" stroke-width="3"/></svg>';
 }
 
 /* ===== 数直線（分数の大きさ） ===== */
@@ -489,9 +920,104 @@ function lineSVG(q){
 /* ===== 横式 ===== */
 function formulaHTML(q,done){
   if(mode==='ookisa')return '';
+  if(mode==='kangae'){
+    if(!q)return '';
+    return '<div class="hintbox"><div class="hrow"><span>分子</span><span>＝</span>'+
+      frac(1,q.d)+'<span>が いくつ分 かの 数</span></div></div>';
+  }
+  if(mode==='bunshou'){
+    if(!q)return '';
+    if(q.stage===0){          // ＋か－をえらぶ段階のヒント
+      return '<div class="hintbox">'+
+        '<div class="hrow"><span>あわせて・ぜんぶで</span><span>→</span><span class="ansred">＋</span></div>'+
+        '<div class="hrow"><span>のこり・ちがい</span><span>→</span><span class="ansred">－</span></div></div>';
+    }
+    let rows='';
+    const d=q.d, WAKE='<div class="hrow"><span class="chip i">整数部分</span><span>と</span>'+
+      '<span class="chip f">分数部分</span><span>に 分けて 計算する。</span></div>';
+    if(q.op==='sub'){
+      if(q.borrow){             // くり下がり：帯分数を仮分数になおす（教科書③）
+        rows='<div class="hrow">'+mixed(q.t1.w,q.t1.r,d)+'<span>＝</span>'+
+             '<span class="ansred">'+frac(q.t1.n,d)+'</span></div>';
+      }else if(q.t1.form==='imp'){
+        rows='<div class="hrow"><span>分母はそのまま。分子だけ 計算する。</span></div>';
+      }else{
+        rows=WAKE;
+      }
+    }else{
+      if(q.carry){              // くり上がり：1 12/9 を 2 3/9 になおす
+        const left=q.w0?mixed(q.w0,q.s,d):frac(q.s,d);
+        rows=(q.w0?WAKE:'')+'<div class="hrow">'+left+'<span>＝</span>'+
+             '<span class="ansred">'+mixed(q.W,q.r,d)+'</span></div>';
+      }else{
+        rows=WAKE;
+      }
+    }
+    return '<div class="hintbox">'+rows+'</div>';
+  }
+  if(mode==='keisan'){
+    if(!q)return '';
+    if(q.kind==='tk'){
+      if(q.borrow&&q.stage===0){      // 1段目：3 2/5 ＝ 2 ＋ 1 2/5 ＝ 2 7/5
+        const one=q.r1?mixed(1,q.r1,q.d):'<span>1</span>';
+        return '<div class="hintbox hb2">'+
+          '<div class="hcell">'+(q.r1?mixed(q.w1,q.r1,q.d):'<span>'+q.w1+'</span>')+'</div>'+
+          '<div class="hcell"><span>＝</span><span>'+q.bw+'</span><span>＋</span>'+one+'</div>'+
+          '<div class="hcell"></div>'+
+          '<div class="hcell"><span>＝</span><span class="ansred">'+q.bw+'</span>'+
+            '<span class="ansred">'+frac(q.br,q.d)+'</span></div>'+
+        '</div>';
+      }
+      return '<div class="hintbox"><div class="hrow">'+
+        '<span class="chip i">整数部分</span><span>と</span>'+
+        '<span class="chip f">分数部分</span><span>に 分けて 計算する。</span></div></div>';
+    }
+    if(q.kind==='tt'){
+      if(q.carry&&q.stage===1){       // 2段目：9 ÷ 7 ＝ 1 ⋯ 2
+        return '<div class="formula"><small>ヒント</small>'+q.s+' ÷ '+q.d+' ＝ <em>1</em>'+
+               (q.r? ' ⋯ <em>'+q.r+'</em>' : '')+'</div>';
+      }
+      return '<div class="hintbox"><div class="hrow">'+
+        '<span class="chip i">整数部分</span><span>と</span>'+
+        '<span class="chip f">分数部分</span><span>に 分けて 計算する。</span></div></div>';
+    }
+    if(q.kind!=='th')return '';
+    const row=function(n){
+      return '<div class="hrow">'+frac(n,q.d)+'<span>……</span>'+frac(1,q.d)+
+             '<span>の</span><span>'+n+'</span><span>こ分</span></div>';
+    };
+    return '<div class="hintbox">'+row(q.n1)+row(q.n2)+'<div class="rule"></div>'+
+      '<div class="hrow"><span>'+(q.add?'あわせて、':'ちがいは、')+'</span>'+frac(1,q.d)+
+      '<span>の</span>'+(done?'<em>'+q.a+'</em>':'<span class="blank"></span>')+
+      '<span>こ分</span></div></div>';
+  }
+  if(mode==='fugou'){
+    if(q.kind==='mi')   // 帯分数を仮分数になおす
+      return '<div class="formula"><small>ヒント</small>'+q.d+' × '+q.w+' ＋ '+q.r+' ＝ <em>'+q.base+'</em></div>';
+    return '';   // 分子が同じ問題は、円の絵がヒント
+  }
   if(mode==='arawashi'){
-    return '<div class="formula"><small>ヒント</small>1めもりは '+frac(1,q.d)+
-           (done?' 　　色は <em>'+q.n+'</em> こ分':'')+'</div>';
+    if(!q)return '';
+    if(q.kind==='ara'){
+      return '<div class="formula"><small>ヒント</small>1めもりは '+frac(1,q.d)+
+             (done?' 　　色は <em>'+q.n+'</em> こ分':'')+'</div>';
+    }
+    if(q.kind==='nak'){
+      return '<div class="hintbox">'+
+        '<div class="hrow"><span>分子が 分母より 小さい</span><span>→</span><span class="ansred">真分数</span></div>'+
+        '<div class="hrow"><span>分子が 分母と 同じか 大きい</span><span>→</span><span class="ansred">仮分数</span></div>'+
+        '<div class="hrow"><span>整数と 分数で できている</span><span>→</span><span class="ansred">帯分数</span></div></div>';
+    }
+    if(q.form==='c'){                 // 1 は 1/d の d こ分 → d × w ＋ r
+      return '<div class="hintbox">'+
+        '<div class="hrow"><span>1</span><span>……</span>'+frac(1,q.d)+'<span>の</span>'+
+          '<span class="ansred">'+q.d+'</span><span>こ分</span></div>'+
+        '<div class="hrow"><span>'+q.d+' × '+q.w+' ＋ '+q.r+'</span>'+
+          (done?'<span>＝</span><span class="ansred">'+q.n+'</span>':'')+'</div></div>';
+    }
+    return '<div class="hintbox">'+
+      '<div class="hrow"><span>分母</span><span>……</span><span>いくつに 分けた 大きさか</span></div>'+
+      '<div class="hrow"><span>分子</span><span>……</span><span>それが いくつ分 か</span></div></div>';
   }
   if(mode==='kaTai'){
     // 7 ÷ 4 ＝ 1 ⋯ 3
@@ -504,19 +1030,56 @@ function formulaHTML(q,done){
 }
 
 /* ===== じょうたい ===== */
-function newSet(){return {i:0,score:0,q:null,locked:false,done:false,missed:false};}
-const state={arawashi:newSet(),kaTai:newSet(),taiKa:newSet(),
-  'ookisa:same':newSet(),'ookisa:cmp':newSet(),'ookisa:rnd':newSet()};
-let mode='arawashi',sub='same';
-function KEY(){return mode==='ookisa'?mode+':'+sub:mode;}
+// 小タブを持つタブの一覧（左から出る順）
+const SUBS={
+  arawashi:[{k:'ikutsu',t:'いくつ分'},{k:'nakama',t:'なかま分け'},{k:'arawa',t:'仮分数と帯分数'}],
+  ookisa:[{k:'same',t:'同じ大きさ'},{k:'cmp',t:'不等号'},{k:'rnd',t:'ランダム'}],
+  keisan:[{k:'th',t:'分数のたし算とひき算'},{k:'tt',t:'帯分数のたし算'},{k:'tk',t:'帯分数のひき算'}]
+};
+const subState={arawashi:'ikutsu',ookisa:'same',keisan:'th'};
+// queue … まちがえた問題の控え。wait が 0 になったら もう一度 出す
+function newSet(){return {score:0,q:null,locked:false,missed:false,queued:false,queue:[]};}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+const state={};
+let mode='arawashi';
+function SUB(){return subState[mode];}
+function KEY(){return SUBS[mode]?mode+':'+SUB():mode;}
+function renderSubtabs(){
+  const el=$('subtabs'),list=SUBS[mode];
+  el.hidden=!list;
+  if(!list)return;
+  if(el.dataset.mode!==mode){
+    el.dataset.mode=mode;
+    el.innerHTML=list.map(function(s){
+      return '<button class="subtab" role="tab" aria-selected="false" data-sub="'+s.k+'">'+s.t+'</button>';
+    }).join('');
+  }
+  const cur=SUB();
+  el.querySelectorAll('.subtab').forEach(function(x){
+    x.setAttribute('aria-selected',x.dataset.sub===cur?'true':'false');
+  });
+}
 let timer=null,fadeTimer=null,stampTimer=null;
-function S(){return state[KEY()];}
+function S(){const k=KEY();return state[k]||(state[k]=newSet());}
 
 /* ===== 出題 ===== */
 function nextQuestion(){
   const s=S();
-  s.q=MODES[mode].make(s.i);
-  s.locked=false; s.missed=false;
+  if(!s.queue)s.queue=[];
+  // 控えてある問題の待ち番号を1つずつ進め、順番が来たものがあればそれを出す
+  let due=-1;
+  for(let i=0;i<s.queue.length;i++){
+    s.queue[i].wait--;
+    if(due<0&&s.queue[i].wait<=0)due=i;
+  }
+  if(due>=0){
+    const it=s.queue.splice(due,1)[0];
+    s.q=clone(it.q); s.q.again=it.again;
+  }else{
+    s.q=MODES[mode].make();
+  }
+  s.q0=clone(s.q);
+  s.locked=false; s.missed=false; s.queued=false;
   clearTimeout(stampTimer);clearTimeout(fadeTimer);
   $('stamp').classList.remove('show','fadeout');
   setBar('');
@@ -525,21 +1088,20 @@ function nextQuestion(){
 
 function render(){
   const s=S();
-  $('practice').hidden=s.done;
-  $('result').hidden=!s.done;
-  $('subtabs').hidden=(mode!=='ookisa');
-  document.querySelectorAll('.subtab').forEach(function(x){
-    x.setAttribute('aria-selected',x.dataset.sub===sub?'true':'false');
-  });
-  if(s.done){renderResult();return;}
+  renderSubtabs();
+  const bh=(mode==='keisan')?SUB():'';
+  const ar=(mode==='arawashi')?SUB():'';
+  $('barArea').classList.toggle('tall',bh==='th'||ar==='nakama');
+  $('barArea').classList.toggle('mid',bh==='tk'||mode==='bunshou'||ar==='ikutsu');
   $('score').textContent=s.score;
   const pr=MODES[mode].prompt;
-  $('prompt').innerHTML=(typeof pr==='function')?pr(s.q):pr;
+  const badge=(s.q&&s.q.again)?'<span class="again">もういちど</span>':'';
+  $('prompt').innerHTML=badge+((typeof pr==='function')?pr(s.q):pr);
 
   const q=s.q;
   let html='';
   $('eq').className='eq';
-  if(mode==='arawashi'){
+  if(mode==='arawashi'&&q.kind==='ara'){
     const len=String(q.n).length;
     seq=['a2','a1','a3','a5','a4'];   // 分母→分子、帯分数は 整数→分母→分子
     $('eq').className='eq col';
@@ -561,6 +1123,37 @@ function render(){
             '</span>'+
           '</span><span class="unit">m</span></span>'+
       '</div>';
+  }else if(mode==='arawashi'){
+    if(q.kind==='nak'){
+      seq=[];
+      const t=(q.type==='tai')?mixed(q.w,q.r,q.d,'big'):frac(q.n,q.d,'big');
+      html='<div class="eqrow lg">'+t+'<span class="wordbox" id="signbox"></span></div>';
+    }else{
+      $('eq').className='eq col';
+      const len=String(q.n).length;
+      const numBox=function(id,wide){
+        return '<input class="box '+(wide?'wide-box':'num-box')+'" id="'+id+'" type="text" '+
+               'inputmode="numeric" maxlength="'+(wide?len:1)+'" aria-label="□にあてはまる数">';
+      };
+      // テープ図は、ヒントを押したときだけ見えるようにする（場所は先に取っておく）
+      const tape='<div class="tapebox hintonly" id="tapebox">'+tapeSVG(q.n,q.d)+'</div>';
+      let row='';
+      if(q.form==='a'){                       // 1/5 の 7こ分 は □/□
+        seq=['a2','a1'];
+        row=frac(1,q.d)+'<span>の</span><span class="cnt">'+q.n+'</span><span>こ分は</span>'+
+          '<span class="ansfrac">'+numBox('a1',len>1)+'<span class="bar"></span>'+numBox('a2')+'</span>';
+      }else if(q.form==='b'){                 // 7/5 は 1/□ の □こ分
+        seq=['a2','a1'];
+        row=frac(q.n,q.d)+'<span>は、</span>'+
+          '<span class="ansfrac"><span class="den-fixed">1</span><span class="bar"></span>'+numBox('a2')+'</span>'+
+          '<span>の</span>'+numBox('a1',len>1)+'<span>こ分</span>';
+      }else{                                  // 2 1/5 は 1/5 の □こ分
+        seq=['a1'];
+        row=mixed(q.w,q.r,q.d)+'<span>は、</span>'+frac(1,q.d)+'<span>の</span>'+
+          numBox('a1',len>1)+'<span>こ分</span>';
+      }
+      html=tape+'<div class="mrow">'+row+'</div>';
+    }
   }else if(mode==='kaTai'){
     seq=['a1','a2'];
     html=frac(q.n,q.d,'big')+'<span class="eqsign">=</span>'+
@@ -572,6 +1165,20 @@ function render(){
           '<span class="den-fixed">'+q.d+'</span>'+
         '</span>'+
       '</span>';
+  }else if(mode==='fugou'){
+    seq=[];
+    const box='<span class="signbox" id="signbox"></span>';
+    if(q.kind==='mi'){
+      // 帯分数の下から、下のヒントの式へ矢じるしを引く
+      const A='<span class="side">'+mixed(q.w,q.r,q.d,'big')+ARROW+'</span>';
+      const B=frac(q.n,q.d,'big');
+      html='<div class="eqrow lg top">'+(q.flip?B:A)+box+(q.flip?A:B)+'</div>';
+    }else{
+      // それぞれの分数の下に円をかく
+      const A='<span class="side">'+frac(q.n,q.d1,'big')+pieSVG(q.n,q.d1)+'</span>';
+      const B='<span class="side">'+frac(q.n,q.d2,'big')+pieSVG(q.n,q.d2)+'</span>';
+      html='<div class="eqrow lg top">'+A+box+B+'</div>';
+    }
   }else if(mode==='ookisa'){
     $('eq').className='eq col';
     const tape='<div class="tapebox" id="tapebox">'+lineSVG(q)+'</div>';
@@ -595,6 +1202,82 @@ function render(){
           frac(q.n2,q.d2,'big')+
         '</div>';
     }
+  }else if(mode==='keisan'){
+    if(q.kind==='tk'){
+      const P=q.borrow;              // くり下がるときは2段になる
+      if(P)$('eq').classList.add('nohl');   // 1段目は色分けなし（ヒントはくり下げの式）
+      seq=['a1','a3','a2'];
+      html='<div class="tteq tk">'+
+        '<div class="eqrow lhs">'+hlTerm(q.w1,q.r1,q.d,P)+'<span class="eqsign">－</span>'+hlTerm(q.w2,q.r2,q.d,P)+'</div>'+
+        '<div class="eqrow rhs"><span class="eqsign">=</span>'+ansSet('a',P?String(q.br).length:1,false)+
+          (P?'<span class="eqsign">－</span>'+hlTerm(q.w2,q.r2,q.d):'')+'</div>'+
+        '<div class="eqrow lhs"></div>'+
+        '<div class="eqrow rhs row2 off"><span class="eqsign">=</span>'+ansSet('b',1,false)+'</div>'+
+      '</div>';
+      if(P)seq=seq.concat(['b1','b3','b2']);
+    }else if(q.kind==='tt'){
+      seq=['a1','a3','a2'];            // 整数 → 分母 → 分子
+      html='<div class="tteq">'+
+        '<div class="eqrow lhs">'+hlTerm(q.w1,q.r1,q.d)+'<span class="eqsign">＋</span>'+hlTerm(q.w2,q.r2,q.d)+'</div>'+
+        '<div class="eqrow rhs"><span class="eqsign">=</span>'+ansSet('a',String(q.s).length,false)+'</div>'+
+        // 2段目は1段のときも場所だけ取っておく（式の縦位置をそろえるため）
+        '<div class="eqrow lhs"></div>'+
+        '<div class="eqrow rhs row2 off"><span class="eqsign">=</span>'+ansSet('b',1,true)+'</div>'+
+      '</div>';
+      if(q.carry)seq=seq.concat(['b1','b3','b2']);
+    }else if(q.kind!=='th'){
+      seq=[];
+      html='<div class="notyet">ほかの もんだいを えらんでね</div>';
+    }else{
+      const len=String(q.a).length;
+      seq=['a2','a1'];                 // 分母 → 分子（→ 整数）
+      if(q.w)seq.push('a3');
+      html='<div class="eqrow">'+
+        frac(q.n1,q.d,'big')+'<span class="eqsign">'+(q.add?'＋':'－')+'</span>'+
+        frac(q.n2,q.d,'big')+'<span class="eqsign">=</span>'+
+        '<span class="ansfrac">'+
+          '<input class="box '+(len>1?'wide-box':'num-box')+'" id="a1" type="text" inputmode="numeric" maxlength="'+len+'" aria-label="答えの分子">'+
+          '<span class="bar"></span>'+
+          '<input class="box num-box" id="a2" type="text" inputmode="numeric" maxlength="1" aria-label="答えの分母">'+
+        '</span>'+
+        (q.w?'<span class="eqsign">=</span><input class="box num-box" id="a3" type="text" inputmode="numeric" maxlength="1" aria-label="整数">':'')+
+        '</div>';
+    }
+  }else if(mode==='bunshou'){
+    $('eq').className='eq col bun';
+    const hasW=(q.W>0);
+    seq=hasW?['a1','a3','a2']:['a3','a2'];   // 整数→分母→分子
+    const ans='<span class="mixed">'+
+      (hasW?'<span class="ip"><input class="box whole-box" id="a1" type="text" inputmode="numeric" maxlength="1" aria-label="答えの整数"></span>':'')+
+      '<span class="fp"><span class="ansfrac"'+(hasW?' style="margin-left:6px"':'')+'>'+
+        '<input class="box num-box" id="a2" type="text" inputmode="numeric" maxlength="1" aria-label="答えの分子">'+
+        '<span class="bar"></span>'+
+        '<input class="box num-box" id="a3" type="text" inputmode="numeric" maxlength="1" aria-label="答えの分母">'+
+      '</span></span></span>';
+    // くり下がり・仮分数どうしの問題は「整数部分と分数部分に分ける」ヒントではないので色分けしない
+    if(q.borrow||q.t1.form==='imp')$('eq').classList.add('nohl');
+    html='<div class="story">'+q.text+'</div>'+
+      '<div class="eqrow"><span class="shiki">[式]</span>'+
+        bunTerm(q.t1)+'<span class="signbox" id="signbox"></span>'+bunTerm(q.t2)+
+        '<span class="eqsign">=</span>'+
+        '<span class="ansarea off" id="ansarea">'+ans+'<span class="unit">'+q.unit+'</span></span>'+
+      '</div>';
+  }else if(mode==='kangae'){
+    $('eq').className='eq col kng';
+    seq=['a1','a2','a3'];
+    const d=q.d, one=frac(1,d), sign=(q.op==='add')?'＋':'－';
+    const bx=function(id){
+      return '<input class="box kbox" id="'+id+'" type="text" inputmode="numeric" maxlength="1" aria-label="□にあてはまる数">';
+    };
+    html='<div class="kpanel">'+
+      '<div class="krow">'+one+'<span>をもとにして 考えます。</span></div>'+
+      '<div class="krow">'+frac(q.a,d)+'<span>は、</span>'+one+'<span>が</span>'+bx('a1')+'<span>こ分。</span></div>'+
+      '<div class="krow">'+frac(q.b,d)+'<span>は、</span>'+one+'<span>が</span>'+bx('a2')+'<span>こ分。</span></div>'+
+      '<div class="krow"><span>だから、</span>'+frac(q.a,d)+'<span>'+sign+'</span>'+frac(q.b,d)+
+        '<span>は、</span>'+one+'<span>をもとにすると、</span></div>'+
+      '<div class="krow"><span>'+q.a+'&nbsp;'+sign+'</span>'+bx('a3')+
+        '<span>の計算で 考えることができます。</span></div>'+
+    '</div>';
   }else{
     const len=String(q.n).length;
     seq=['a1'];
@@ -605,7 +1288,9 @@ function render(){
         '<span class="den-fixed">'+q.d+'</span>'+
       '</span>';
   }
-  setPad(mode==='ookisa'&&q.kind==='cmp'?'sign':'num');
+  setPad((q&&q.kind==='nak')?'word':
+         (isSignQ(q)?'sign':((q&&q.kind==='bun'&&q.stage===0)?'pm':'num')));
+  $('eq').parentNode.classList.toggle('bun',mode==='bunshou');
   $('eq').innerHTML=html;
   bindBoxes();
 }
@@ -621,6 +1306,8 @@ function bindBoxes(){
       onType(b);
     });
   });
+  const q0=S().q;
+  if(q0&&q0.kind==='bun'&&q0.stage===0){active=null;return;}   // ＋－をえらぶ間はマスに入らない
   active=$(seq[0])||boxes[0]||null;
   if(active)active.focus({preventScroll:true});
 }
@@ -628,7 +1315,23 @@ function bindBoxes(){
 function onType(box){
   const s=S(); if(s.locked)return;
   const q=s.q;
-  if(mode==='arawashi'){
+  if(mode==='kangae'){
+    if(box.value.length<box.maxLength)return;
+    const i=seq.indexOf(box.id);
+    if(i>=0&&i<seq.length-1){const nx=$(seq[i+1]); if(nx){nx.focus();return;}}
+    judge(Number($('a1').value)===q.a&&Number($('a2').value)===q.b&&
+          Number($('a3').value)===q.b, seq.slice());
+    return;
+  }
+  if(mode==='bunshou'){
+    if(box.value.length<box.maxLength)return;
+    const i=seq.indexOf(box.id);
+    if(i>=0&&i<seq.length-1){const nx=$(seq[i+1]); if(nx){nx.focus();return;}}
+    const okW=(q.W>0)?(Number($('a1').value)===q.W):true;
+    judge(okW&&Number($('a2').value)===q.r&&Number($('a3').value)===q.d,seq.slice());
+    return;
+  }
+  if(mode==='arawashi'&&q.kind==='ara'){
     if(box.value.length<box.maxLength)return;
     if(box.id==='a1'){                 // 仮分数（分母→分子）がそろった
       if(Number($('a1').value)!==q.n||Number($('a2').value)!==q.d){judge(false,['a2','a1']);return;}
@@ -639,6 +1342,81 @@ function onType(box){
       return;
     }
     const nx=$(seq[seq.indexOf(box.id)+1]); if(nx)nx.focus();
+    return;
+  }
+  if(mode==='keisan'){
+    if(box.value.length<box.maxLength)return;
+    if(q.kind==='tk'){
+      if(box.id==='a1'){$('a3').focus();return;}
+      if(box.id==='a3'){$('a2').focus();return;}
+      if(box.id==='a2'){
+        if(!q.borrow){                 // くり下がらない：1段で答え
+          judge(Number($('a1').value)===q.W&&Number($('a2').value)===q.r&&Number($('a3').value)===q.d,
+                ['a1','a3','a2']);
+          return;
+        }
+        // 1段目：くり下げた形（2 7/5）
+        if(Number($('a1').value)!==q.bw||Number($('a2').value)!==q.br||Number($('a3').value)!==q.d){
+          q.stage=0;
+          $('eq').classList.add('nohl');
+          const ry=$('eq').querySelector('.row2'); if(ry)ry.classList.add('off');
+          ['b1','b2','b3'].forEach(function(id){var e=$(id); if(e)e.value='';});
+          judge(false,['a1','a3','a2']);return;
+        }
+        q.stage=1;                     // 2段目へ。ここから色分けのヒントになる
+        $('eq').classList.remove('nohl');
+        const rz=$('eq').querySelector('.row2'); if(rz)rz.classList.remove('off');
+        if($('eq').classList.contains('hinton'))setBar(formulaHTML(q,false));
+        $('b1').focus();return;
+      }
+      if(box.id==='b1'){$('b3').focus();return;}
+      if(box.id==='b3'){$('b2').focus();return;}
+      judge(Number($('b1').value)===q.W&&Number($('b2').value)===q.r&&Number($('b3').value)===q.d,
+            ['b1','b3','b2']);
+      return;
+    }
+    if(q.kind==='tt'){
+      if(box.id==='a1'){$('a3').focus();return;}
+      if(box.id==='a3'){$('a2').focus();return;}
+      if(box.id==='a2'){               // 1段目（そのまま計算）がそろった
+        if(Number($('a1').value)!==q.w0||Number($('a2').value)!==q.s||Number($('a3').value)!==q.d){
+          q.stage=0;                   // 2段目はいったん引っこめる
+          $('eq').classList.remove('nohl');
+          const rx=$('eq').querySelector('.row2'); if(rx)rx.classList.add('off');
+          ['b1','b2','b3'].forEach(function(id){var e=$(id); if(e)e.value='';});
+          judge(false,['a1','a3','a2']);return;
+        }
+        if(!q.carry){judge(true);return;}
+        q.stage=1;                     // 2段目へ。ヒントは色分けをやめて横式にする
+        $('eq').classList.add('nohl');
+        const r2=$('eq').querySelector('.row2'); if(r2)r2.classList.remove('off');
+        if($('eq').classList.contains('hinton'))setBar(formulaHTML(q,false));
+        $('b1').focus();return;
+      }
+      if(box.id==='b1'){               // 2段目の整数
+        if(q.r===0&&Number(box.value)===q.W){judge(true);return;}   // 答えが整数になる問題
+        $('b3').focus();return;
+      }
+      if(box.id==='b3'){$('b2').focus();return;}
+      judge(Number($('b1').value)===q.W&&Number($('b2').value)===q.r&&Number($('b3').value)===q.d,
+            ['b1','b3','b2']);
+      return;
+    }
+    if(box.id==='a1'){                 // 分母→分子とそろった
+      if(Number($('a1').value)!==q.a||Number($('a2').value)!==q.d){judge(false,['a2','a1']);return;}
+      if(q.w){$('a3').focus();return;} // 整数になおす問題は、まだ正解にしない
+      judge(true);return;
+    }
+    if(box.id==='a3'){judge(Number(box.value)===q.w,['a3']);return;}
+    const nx=$(seq[seq.indexOf(box.id)+1]); if(nx)nx.focus();
+    return;
+  }
+  if(mode==='arawashi'){               // いくつ分（なかま分けはマスがない）
+    if(box.value.length<box.maxLength)return;
+    const i=seq.indexOf(box.id);
+    if(i>=0&&i<seq.length-1){const nx=$(seq[i+1]); if(nx){nx.focus();return;}}
+    if(q.form==='c'){ judge(Number($('a1').value)===q.n,['a1']); return; }
+    judge(Number($('a1').value)===q.n&&Number($('a2').value)===q.d,seq.slice());
     return;
   }
   if(mode==='ookisa'){
@@ -662,13 +1440,22 @@ function onType(box){
 }
 
 const SIGN={lt:'＜',eq:'＝',gt:'＞'};
+const PM={add:'＋',sub:'－'};
 function setPad(kind){
   const p=$('pad');
   if(p.dataset.kind===kind)return;
   p.dataset.kind=kind;
-  p.className='pad'+(kind==='sign'?' signs':'');
+  p.className='pad'+((kind==='sign'||kind==='pm'||kind==='word')?' signs':'');
   let h='';
-  if(kind==='sign'){
+  if(kind==='word'){
+    ['shin','kari','tai'].forEach(function(k){
+      h+='<button class="key sign word" type="button" data-word="'+k+'">'+NAK[k]+'</button>';
+    });
+  }else if(kind==='pm'){
+    ['add','sub'].forEach(function(k){
+      h+='<button class="key sign" type="button" data-pm="'+k+'">'+PM[k]+'</button>';
+    });
+  }else if(kind==='sign'){
     ['lt','eq','gt'].forEach(function(k){
       h+='<button class="key sign" type="button" data-sign="'+k+'">'+SIGN[k]+'</button>';
     });
@@ -679,17 +1466,43 @@ function setPad(kind){
   }
   p.innerHTML=h;
 }
+function isSignQ(q){return !!q&&(q.kind==='cmp'||q.kind==='mi'||q.kind==='sn');}
+let lastPick=null;               // さいごに押した ＜＝＞ ／ ＋－ ／ 3択（まちがい方を見るのに使う）
 function chooseSign(k){
-  const s=S(); if(s.locked||s.done)return;
-  const q=s.q; if(!q||q.kind!=='cmp')return;
+  const s=S(); if(s.locked)return;
+  const q=s.q; if(!isSignQ(q))return;
   const b=$('signbox'); if(b)b.textContent=SIGN[k];
+  lastPick=k;
   judge(k===q.ans);
+}
+// なかま分け：真分数・仮分数・帯分数 の 3択
+function chooseWord(k){
+  const s=S(); if(s.locked)return;
+  const q=s.q; if(!q||q.kind!=='nak')return;
+  const b=$('signbox'); if(b)b.textContent=NAK[k];
+  lastPick=k;
+  judge(k===q.ans);
+}
+// 文章題：＋か－をえらぶ。正しければ答えのマスが出てきて数字のテンキーに変わる
+function choosePM(k){
+  const s=S(); if(s.locked)return;
+  const q=s.q; if(!q||q.kind!=='bun'||q.stage!==0)return;
+  const b=$('signbox'); if(b)b.textContent=PM[k];
+  lastPick=k;
+  if(k!==q.op){judge(false);return;}
+  q.stage=1;
+  const ar=$('ansarea'); if(ar)ar.classList.remove('off');
+  setPad('num');
+  if($('eq').classList.contains('hinton'))setBar(formulaHTML(q,false));
+  const f=$(seq[0]); if(f){f.focus();active=f;}
 }
 function buildPad(){
   setPad('num');
   $('pad').addEventListener('click',function(e){
     const btn=e.target.closest('.key'); if(!btn)return;
     const s=S(); if(s.locked)return;
+    if(btn.dataset.word){chooseWord(btn.dataset.word);return;}
+    if(btn.dataset.pm){choosePM(btn.dataset.pm);return;}
     if(btn.dataset.sign){chooseSign(btn.dataset.sign);return;}
     if(!active||!document.body.contains(active))active=document.querySelector('input.box');
     if(!active)return;
@@ -708,6 +1521,107 @@ function buildPad(){
   });
 }
 
+/* ===== まちがい方に合わせた ひとこと ===== */
+// マスの中の数を読む（判定でマスを消す前に呼ぶこと）
+function V(id){const e=$(id);return (e&&e.value!=='')?Number(e.value):null;}
+function missTip(q,clearIds){
+  if(!q)return '';
+  const cid=clearIds||[];
+  if(mode==='arawashi'&&q.kind==='ara'){
+    if(cid.indexOf('a2')>=0){                       // 仮分数のマス
+      if(V('a2')!==q.d)return '1mを いくつに<br>分けて あるかな';
+      return '色をぬった ところは<br>1めもりの いくつ分 かな';
+    }
+    if(V('a3')!==q.w)return '1m が いくつ分<br>あるかな';
+    if(V('a5')!==q.d)return '分母は 1めもりの<br>大きさ だよ';
+    return 'のこりは 1めもりの<br>いくつ分 かな';
+  }
+  if(mode==='arawashi'){                            // なかま分け・いくつ分
+    if(q.kind==='nak'){
+      if(q.type==='tai')return '整数と 分数で<br>できているね';
+      if(q.type==='shin')return '分子が 分母より<br>小さいね';
+      return '分子が 分母と<br>同じか 大きいね';
+    }
+    if(q.form==='c')return '1 は '+q.d+' こ分 だよ';
+    if(V('a2')!==q.d)return 'もとの 分数の 分母と<br>同じ 数だよ';
+    return (q.form==='a')?'こ数が そのまま<br>分子に なるよ'
+                         :'分子が そのまま<br>こ数に なるよ';
+  }
+  if(mode==='kaTai'){
+    const w=V('a1'),n=V('a2');
+    if(w===q.r&&n===q.w)return '商が 整数、<br>あまりが 分子だよ';
+    if(w!==q.w)return q.n+' ÷ '+q.d+' の 商が<br>整数に なるよ';
+    return 'あまりが 分子に なるよ';
+  }
+  if(mode==='taiKa'){
+    const v=V('a1');
+    if(v===q.w+q.r)return '分母 × 整数 に<br>分子を たすよ';
+    if(v===q.d*q.w)return '分子を たすのを<br>わすれないでね';
+    return '';
+  }
+  if(mode==='fugou'){
+    if(q.kind==='sn')return '分母が 大きいほど、<br>1こ分は 小さいよ';
+    return '帯分数を 仮分数に<br>なおして くらべよう';
+  }
+  if(mode==='ookisa'){
+    if(q.kind==='eq'){
+      if(V('a1')===q.n1)return '分母が 何倍に<br>なったか 見てみよう';
+      return '数直線で 同じ長さの<br>ところを さがそう';
+    }
+    if(q.n1===q.n2)return '分母が 大きいほど、<br>1こ分は 小さいよ';
+    return '数直線で 長さを<br>くらべよう';
+  }
+  if(mode==='keisan'){
+    if(q.kind==='th'){
+      const n=V('a1'),d=V('a2'),w=V('a3');
+      if(d!==q.d)return '分母は そのまま。<br>分子だけ 計算するよ';
+      if(n!==q.a){
+        if(q.add&&n===Math.abs(q.n1-q.n2))return 'しるしは ＋ だよ。<br>たしてみよう';
+        if(!q.add&&n===q.n1+q.n2)return 'しるしは － だよ。<br>ひいてみよう';
+        return '分子どうしを<br>計算するよ';
+      }
+      if(q.w&&w!==q.w)return '分子 ÷ 分母 で<br>整数に なおすよ';
+      return '';
+    }
+    if(q.kind==='tt'){
+      if(q.stage===1){
+        if(V('b1')===q.w0)return '分子が 分母より 大きいね。<br>1 くり上げよう';
+        return 'くり上げた 1 を<br>整数に たすよ';
+      }
+      const w=V('a1'),d=V('a3');
+      if(d!==q.d)return '分母は そのまま だよ';
+      if(q.carry&&w===q.W)return 'まず そのまま たして、<br>あとで くり上げよう';
+      if(w!==q.w0)return '整数どうしを たそう';
+      return '分子どうしを たそう';
+    }
+    if(q.kind==='tk'){
+      if(q.borrow&&q.stage===0){
+        if(V('a1')===q.w1)return '分数部分が ひけないね。<br>整数から 1 くり下げよう';
+        if(V('a2')===q.r1)return 'くり下げた 1 は<br>分子 '+q.d+' こ分 だよ';
+        return '整数を 1 へらして、<br>分子に '+q.d+' を たすよ';
+      }
+      const p=q.borrow?'b':'a';
+      if(V(p+'3')!==q.d)return '分母は そのまま だよ';
+      if(V(p+'1')!==q.W)return '整数どうしを ひこう';
+      return '分数部分も ひこう';
+    }
+    return '';
+  }
+  if(mode==='bunshou'){
+    if(q.stage===0)return '線を 引いた ことばを<br>見てみよう';
+    if(V('a3')!==q.d)return '分母は そのまま。<br>分子だけ 計算するよ';
+    if(q.carry)return '分子が 分母より 大きいね。<br>くり上げよう';
+    if(q.borrow)return '分数部分が ひけないね。<br>くり下げて 計算しよう';
+    if(q.W>0&&V('a1')!==q.W)return '整数部分を 計算しよう';
+    return '分数部分を 計算しよう';
+  }
+  if(mode==='kangae'){
+    if(V('a3')!==null&&V('a1')===q.a&&V('a2')===q.b)return '上と 同じ こ数を<br>書くよ';
+    return '分子が そのまま<br>こ数に なるよ';
+  }
+  return '';
+}
+
 /* ===== 判定 ===== */
 function judge(ok,clearIds){
   const s=S(),q=s.q;
@@ -715,11 +1629,12 @@ function judge(ok,clearIds){
     s.locked=true;
     if(!s.missed)s.score++;
     $('score').textContent=s.score;
-    if(mode==='kaTai'&&q.r===0){
+    if(q.r===0){
       const af=$('ansfrac'); if(af)af.classList.add('gone');
     }
-    if(mode==='ookisa'){const t=$('tapebox'); if(t)t.classList.add('hint','answered');}
-    setBar((mode==='arawashi'||mode==='ookisa')?'':formulaHTML(q,true));
+    setHint(true);
+    const tp=$('tapebox'); if(tp)tp.classList.add('answered');
+    setBar((q.kind==='ara')?'':formulaHTML(q,true));
     document.querySelectorAll('input.box').forEach(function(b){b.blur();});
     clearTimeout(timer);clearTimeout(fadeTimer);clearTimeout(stampTimer);
     const st=$('stamp'); if(st)st.classList.remove('show','fadeout');
@@ -732,38 +1647,40 @@ function judge(ok,clearIds){
     timer=setTimeout(advance,3100);
   }else{
     s.missed=true;
+    const tip=missTip(q,clearIds);
+    // まちがえた問題は 3〜5問あとに もう一度 出す（1問につき2回まで）
+    if(!s.queued){
+      s.queued=true;
+      const cnt=q.again||0;
+      if(cnt<2&&s.queue.length<4)s.queue.push({q:clone(s.q0),again:cnt+1,wait:rnd(3,5)});
+    }
     $('eq').classList.add('shake');
     setTimeout(function(){$('eq').classList.remove('shake');},320);
-    setBar('<span class="judge ng">おしい！もういちど</span>'+formulaHTML(q,false));
-    if(mode==='ookisa'){const t=$('tapebox'); if(t)t.classList.add('hint');}
+    setBar('<span class="judge ng'+(tip?' tip':'')+'">'+
+           (tip?'おしい！<br>'+tip:'おしい！もういちど')+'</span>'+formulaHTML(q,false));
+    setHint(true);
     const sb=$('signbox'); if(sb)sb.textContent='';
     if(clearIds&&clearIds.length){
       clearIds.forEach(function(id){var e=$(id); if(e)e.value='';});
       const f0=$(clearIds[0]); if(f0){f0.focus();active=f0;}
-    }else{
+    }else if(!(q&&q.kind==='bun'&&q.stage===0)){
       document.querySelectorAll('input.box').forEach(function(b){b.value='';});
       const f=document.querySelector('input.box'); if(f){f.focus();active=f;}
     }
   }
 }
 
-function advance(){
-  const s=S();
-  s.i++;
-  if(s.i>=TOTAL){s.done=true;render();return;}
-  nextQuestion();
-}
+function advance(){ nextQuestion(); }
 // 正解の待ち時間中にタップしたらすぐ次へ
 $('sheet').addEventListener('click',function(e){
   const s=S();
-  if(s.locked&&!s.done&&!e.target.closest('.key')&&!e.target.closest('.hintbtn')&&!e.target.closest('.subtab')&&!e.target.closest('.nextbtn')){
+  if(s.locked&&!e.target.closest('.key')&&!e.target.closest('.hintbtn')&&!e.target.closest('.subtab')&&!e.target.closest('.nextbtn')){
     clearTimeout(timer);clearTimeout(fadeTimer);clearTimeout(stampTimer);advance();
   }
 });
 
 /* ===== つぎの問題 ===== */
 $('nextBtn').addEventListener('click',function(){
-  const s=S(); if(s.done)return;
   clearTimeout(timer);clearTimeout(fadeTimer);clearTimeout(stampTimer);
   const st=$('stamp'); if(st)st.classList.remove('show','fadeout');
   advance();
@@ -771,44 +1688,23 @@ $('nextBtn').addEventListener('click',function(){
 
 /* ===== ヒント ===== */
 $('hintBtn').addEventListener('click',function(){
-  const s=S(); if(s.locked||s.done)return;
-  if(mode==='ookisa'){const t=$('tapebox'); if(t)t.classList.toggle('hint'); return;}
-  const b=$('barInner');
-  if(b.innerHTML.indexOf('formula')>=0&&b.innerHTML.indexOf('judge')<0){setBar('');return;}
-  setBar(formulaHTML(s.q,false));
-  const f=document.querySelector('input.box'); if(f)f.focus({preventScroll:true});
+  const s=S(); if(s.locked)return;
+  applyHint(!$('eq').classList.contains('hinton'));
+  const q=s.q;
+  if(q&&q.kind==='bun'&&q.stage===0)return;   // ＋－をえらぶ間はマスに入らない
+  // いま入力していたマスに戻す（先頭のマスに戻すと書いた数が消えてしまう）
+  const f=(active&&document.body.contains(active))?active:document.querySelector('input.box');
+  if(f){f.focus({preventScroll:true});active=f;}
 });
 
-/* ===== けっか ===== */
-function renderResult(){
-  const s=S();let m='';
-  for(let k=0;k<s.score;k++)m+='<img src="'+STAMP+'" alt="">';
-  $('result').innerHTML=(mode==='ookisa'?subtabsHTML():'')+'<h2>10もん おわり！</h2>'+
-    '<div class="count">はなまる '+s.score+' こ</div>'+
-    '<div class="marks">'+m+'</div>'+
-    '<button class="again" type="button" id="againBtn">もういちど 10もん</button>';
-  $('againBtn').addEventListener('click',function(){
-    state[KEY()]=newSet();nextQuestion();
-  });
-}
-
 /* ===== タブ ===== */
-const SUBS=[['same','同じ大きさ'],['cmp','不等号'],['rnd','ランダム']];
-function subtabsHTML(){
-  return '<div class="subtabs" role="tablist" aria-label="もんだいのしゅるい">'+
-    SUBS.map(function(x){
-      return '<button class="subtab" role="tab" aria-selected="'+(x[0]===sub)+
-             '" data-sub="'+x[0]+'">'+x[1]+'</button>';
-    }).join('')+'</div>';
-}
 $('sheet').addEventListener('click',function(e){
   const t=e.target.closest('.subtab'); if(!t)return;
-  if(sub===t.dataset.sub)return;
+  if(SUB()===t.dataset.sub)return;
   clearTimeout(timer);clearTimeout(fadeTimer);clearTimeout(stampTimer);
   $('stamp').classList.remove('show','fadeout');
-  sub=t.dataset.sub;
-  const s=S();
-  if(s.done){render();}else{nextQuestion();}
+  subState[mode]=t.dataset.sub;
+  nextQuestion();
 });
 document.querySelectorAll('.tab').forEach(function(t){
   t.addEventListener('click',function(){
@@ -818,15 +1714,29 @@ document.querySelectorAll('.tab').forEach(function(t){
     document.querySelectorAll('.tab').forEach(function(x){
       x.setAttribute('aria-selected',x.dataset.mode===mode?'true':'false');
     });
-    const s=S();
-    if(s.done){render();}
-    else{nextQuestion();}
+    nextQuestion();
   });
 });
 
 document.addEventListener('keydown',function(e){
-  if(mode!=='ookisa')return;
-  const s=S(); if(!s.q||s.q.kind!=='cmp'||s.locked||s.done)return;
+  if(mode==='arawashi'){
+    const s=S(),q=s.q;
+    if(!q||q.kind!=='nak'||s.locked)return;
+    const k={'1':'shin','2':'kari','3':'tai'}[e.key];
+    if(k){e.preventDefault();chooseWord(k);}
+    return;
+  }
+  if(mode==='bunshou'){
+    const s=S(),q=s.q;
+    if(!q||q.kind!=='bun'||q.stage!==0||s.locked)return;
+    let k=null;
+    if(e.key==='+')k='add';
+    else if(e.key==='-')k='sub';
+    if(k){e.preventDefault();choosePM(k);}
+    return;
+  }
+  if(mode!=='ookisa'&&mode!=='fugou')return;
+  const s=S(); if(!isSignQ(s.q)||s.locked)return;
   let k=null;
   if(e.key==='<'||e.key===','||e.key==='ArrowLeft')k='lt';
   else if(e.key==='>'||e.key==='.'||e.key==='ArrowRight')k='gt';
